@@ -3,17 +3,17 @@ name: Build MicroPython (Pico W + user C module)
 
 on:
 push:
-branches: [ "**" ]
+branches:
+- "**"
 pull_request:
-branches: [ "**" ]
-workflow_dispatch:
+branches:
+- "**"
+workflow_dispatch: {}
 
 
 jobs:
 build:
 runs-on: ubuntu-latest
-
-
 steps:
 - name: Checkout this repo
 uses: actions/checkout@v4
@@ -22,7 +22,11 @@ uses: actions/checkout@v4
 - name: Install toolchain deps
 run: |
 sudo apt-get update
-sudo apt-get install -y build-essential cmake gcc-arm-none-eabi libnewlib-arm-none-eabi
+sudo apt-get install -y \
+build-essential \
+cmake \
+gcc-arm-none-eabi \
+libnewlib-arm-none-eabi
 
 
 - name: Fetch MicroPython

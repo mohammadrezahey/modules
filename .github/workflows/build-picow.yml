@@ -1,50 +1,40 @@
-name: Build MicroPython (Pico W + user C module)
-
+name: build-picow
 
 on:
-push:
-branches:
-- "**"
-pull_request:
-branches:
-- "**"
-workflow_dispatch: {}
-
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
 
 jobs:
-build:
-runs-on: ubuntu-latest
-steps:
-- name: Checkout this repo
-uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-- name: Install toolchain deps
-run: |
-sudo apt-get update
-sudo apt-get install -y \
-build-essential \
-cmake \
-gcc-arm-none-eabi \
-libnewlib-arm-none-eabi
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake gcc-arm-none-eabi libnewlib-arm-none-eabi
 
+      - name: Clone MicroPython and build mpy-cross
+        run: |
+          git clone --recurse-submodules https://github.com/micropython/micropython.git
+          make -C micropython/mpy-cross
 
-- name: Fetch MicroPython
-run: |
-git clone --recurse-submodules https://github.com/micropython/micropython.git
-make -C micropython/mpy-cross
+      - name: Build Pico W firmware (rp2)
+        run: |
+          make -C micropython/ports/rp2 BOARD=RPI_PICO_W clean
+          make -C micropython/ports/rp2 BOARD=RPI_PICO_W submodules
+          make -C micropython/ports/rp2 -j BOARD=RPI_PICO_W USER_C_MODULES="${{ github.workspace }}/modules/micropython.cmake"
 
-
-- name: Build rp2 (RPI_PICO_W) with user C modules
-working-directory: micropython/ports/rp2
-run: |
-make BOARD=RPI_PICO_W clean
-make BOARD=RPI_PICO_W submodules
-make -j BOARD=RPI_PICO_W USER_C_MODULES=${{ github.workspace }}/modules/micropython.cmake
-
-
-- name: Upload UF2 artifact
-uses: actions/upload-artifact@v4
-with:
-name: firmware-RPI_PICO_W
-path: micropython/ports/rp2/build-RPI_PICO_W/firmware.uf2
+      - name: Upload UF2 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-RPI_PICO_W
+          path: micropython/ports/rp2/build-RPI_PICO_W/firmware.uf2

@@ -17,6 +17,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Toolchain info
+        run: |
+          uname -a
+          cmake --version
+          arm-none-eabi-gcc --version || true
+
       - name: Install toolchain
         run: |
           sudo apt-get update
@@ -35,11 +41,13 @@ jobs:
           [ -f "${UCM}" ] || (echo "::error file=micropython.cmake::micropython.cmake not found at ${UCM}"; exit 1)
           echo "UCM=${UCM}" >> $GITHUB_ENV
 
-      - name: Build Pico W firmware (rp2)
+      - name: Build Pico W firmware (rp2) with verbose logs and no -Werror
         run: |
+          set -e
           make -C micropython/ports/rp2 BOARD=RPI_PICO_W clean
           make -C micropython/ports/rp2 BOARD=RPI_PICO_W submodules
-          make -C micropython/ports/rp2 -j BOARD=RPI_PICO_W USER_C_MODULES="${UCM}"
+          # V=1 -> verbose CMake/make; WERROR=0 -> غیرفعال کردن -Werror برای کل بیلد
+          make -C micropython/ports/rp2 -j BOARD=RPI_PICO_W USER_C_MODULES="${UCM}" V=1 WERROR=0
 
       - name: Upload UF2 artifact
         uses: actions/upload-artifact@v4

@@ -27,11 +27,19 @@ jobs:
           git clone --recurse-submodules https://github.com/micropython/micropython.git
           make -C micropython/mpy-cross
 
+      - name: Resolve USER_C_MODULES path (root-level micropython.cmake)
+        run: |
+          set -e
+          UCM=$(realpath "${GITHUB_WORKSPACE}/micropython.cmake")
+          echo "USER_C_MODULES => ${UCM}"
+          [ -f "${UCM}" ] || (echo "::error file=micropython.cmake::micropython.cmake not found at ${UCM}"; exit 1)
+          echo "UCM=${UCM}" >> $GITHUB_ENV
+
       - name: Build Pico W firmware (rp2)
         run: |
           make -C micropython/ports/rp2 BOARD=RPI_PICO_W clean
           make -C micropython/ports/rp2 BOARD=RPI_PICO_W submodules
-          make -C micropython/ports/rp2 -j BOARD=RPI_PICO_W USER_C_MODULES="${{ github.workspace }}/modules/micropython.cmake"
+          make -C micropython/ports/rp2 -j BOARD=RPI_PICO_W USER_C_MODULES="${UCM}"
 
       - name: Upload UF2 artifact
         uses: actions/upload-artifact@v4
